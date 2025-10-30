@@ -394,47 +394,38 @@ footer{color:var(--muted)}
 </div>
 
 <script>
-document.getElementById('year').textContent = new Date().getFullYear();
-(function(){
-  const KEY='ls_offer_deadline';
-  let deadline = localStorage.getItem(KEY);
-  if(!deadline){
-    const d = new Date();
-    d.setHours(d.getHours()+6);
-    deadline = d.toISOString();
-    localStorage.setItem(KEY, deadline);
-  }
-  const end = new Date(deadline).getTime();
-  const el = document.getElementById('countdown');
-  const tick = () => {
-    const now = Date.now();
-    let diff = end - now;
-    if(diff <= 0){ el.textContent = '00:00:00'; return; }
-    const h = Math.floor(diff/3600000);
-    diff %= 3600000;
-    const m = Math.floor(diff/60000);
-    const s = Math.floor((diff%60000)/1000);
-    el.textContent = String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-    requestAnimationFrame(tick);
-  };
-  tick();
-})();
-function ensureStock(id, min, max){
-  const k = 'ls_'+id;
-  let v = sessionStorage.getItem(k);
-  if(!v){ v = Math.floor(Math.random()*(max-min+1))+min; sessionStorage.setItem(k,v); }
-  document.getElementById(id).textContent = v;
-}
-ensureStock('heroLeft',12,22);
-ensureStock('hpLeft',8,22);
-ensureStock('ppLeft',6,16);
-ensureStock('dLeft',6,12);
-ensureStock('mixLeft',6,12);
-document.getElementById('orderForm').addEventListener('submit', function(e){
+document.getElementById('orderForm').addEventListener('submit', async function (e) {
   e.preventDefault();
-  this.reset();
-  document.getElementById('orderThanks').style.display='block';
+
+  const form = e.target;
+  const data = {
+    name: form.name.value,
+    phone: form.phone.value,
+    page: "likeris-landing"
+  };
+
+  const status = document.getElementById('status');
+  status.textContent = '⏳ Надсилаємо заявку...';
+
+  try {
+    const response = await fetch('/api/send-telegram', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+      status.textContent = '✅ Заявку надіслано! Очікуйте.';
+      form.reset();
+    } else {
+      status.textContent = '⚠️ Помилка при надсиланні.';
+    }
+  } catch (error) {
+    status.textContent = '❌ Помилка мережі.';
+    console.error(error);
+  }
 });
 </script>
 </body>
 </html>
+
